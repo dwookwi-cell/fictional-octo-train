@@ -18,6 +18,7 @@ export default function Page() {
   const router = useRouter();
   const [collection, setCollection] = useState<CollectionResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [chatInput, setChatInput] = useState("");
@@ -32,7 +33,12 @@ export default function Page() {
         saveCollection(data);
         saveSnapshot(todayYmd(), data.items);
         setCollection(data);
+        setFailed(false);
+      } else {
+        setFailed(true);
       }
+    } catch {
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -74,8 +80,8 @@ export default function Page() {
   };
 
   const goNewsletter = () => {
-    saveSelection([...checked]);
     const marketUrls = (recs?.market ?? []).map((m) => m.sourceUrl);
+    saveSelection([...checked].filter((k) => !marketUrls.includes(k)));
     saveMarketSelection(marketUrls.filter((u) => checked.has(u)));
     saveChatroom(chat);
     router.push("/newsletter");
@@ -99,6 +105,10 @@ export default function Page() {
         ))}
       </div>
 
+      {failed && (
+        <p style={{ color: "#c00" }}>수집에 실패했습니다. 잠시 후 새로고침 해주세요.</p>
+      )}
+
       {recs && visibleCompany.length === 0 && (
         <p style={{ color: "#666" }}>오늘은 2곳 이상 겹친 종목이 없습니다. “전체 보기”로 전체 리포트를 확인하세요.</p>
       )}
@@ -108,6 +118,19 @@ export default function Page() {
           <RecItem key={r.stock} rec={r} checked={checked.has(r.stock)} onToggle={toggle} />
         ))}
       </ul>
+
+      {recs && recs.industry.length > 0 && (
+        <>
+          <h2 style={{ fontSize: 15, marginTop: 16 }}>산업</h2>
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {recs.industry.map((r) => (
+              <li key={r.stock} style={{ padding: "8px 0", borderBottom: "1px solid #eee", fontSize: 14 }}>
+                • {r.stock} · {r.leadBrokerage}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {recs && recs.market.length > 0 && (
         <>
