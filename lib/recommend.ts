@@ -37,10 +37,9 @@ function buildRec(
   const mentionCount = brokerages.length;
   const isWatchlist = watch.has(stock);
   const tags: RecTag[] = [];
-  const anyTitle = items.map((i) => i.title).join(" | ");
-  if (RE_UP.test(anyTitle)) tags.push("target-up");
-  if (RE_DOWN.test(anyTitle)) tags.push("target-down");
-  if (RE_NEW.test(anyTitle)) tags.push("new-coverage");
+  if (items.some((i) => RE_UP.test(i.title))) tags.push("target-up");
+  if (items.some((i) => RE_DOWN.test(i.title))) tags.push("target-down");
+  if (items.some((i) => RE_NEW.test(i.title))) tags.push("new-coverage");
   if (isWatchlist) tags.push("watchlist");
   if (chat.has(stock)) tags.push("chatroom");
 
@@ -48,7 +47,7 @@ function buildRec(
   const lead = byNewest.find((i) => /상향|하향|목표가/.test(i.title)) ?? byNewest[0];
 
   const prevTp = prev[stock];
-  const curTp = items.find((i) => typeof i.targetPrice === "number")?.targetPrice;
+  const curTp = byNewest.find((i) => typeof i.targetPrice === "number")?.targetPrice;
   const targetPriceChangePct =
     prevTp && curTp ? Math.round(((curTp - prevTp) / prevTp) * 100) : undefined;
 

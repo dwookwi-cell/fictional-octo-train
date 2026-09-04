@@ -16,6 +16,7 @@ describe("recommend", () => {
     expect(out.company).toHaveLength(1);
     expect(out.company[0].mentionCount).toBe(3);
     expect(out.company[0].hidden).toBe(false);
+    expect(out.company[0].score).toBe(30); // 0 + 3*10 + 0 + 0
   });
 
   it("hides a single-brokerage stock with no special tags", () => {
@@ -52,6 +53,33 @@ describe("recommend", () => {
       watchlist: [], chatroomStocks: [], prevTargetPrices: { 삼성전자: 100000 },
     });
     expect(out.company[0].targetPriceChangePct).toBe(10);
+  });
+
+  it("computes targetPriceChangePct from the newest item's targetPrice", () => {
+    const out = recommend({
+      items: [
+        mk({ brokerage: "삼성", date: "2026-09-01", targetPrice: 110000 }),
+        mk({ brokerage: "NH", date: "2026-09-03", targetPrice: 120000 }),
+      ],
+      watchlist: [], chatroomStocks: [], prevTargetPrices: { 삼성전자: 100000 },
+    });
+    expect(out.company[0].targetPriceChangePct).toBe(20); // from newest (120000), not oldest (110000)
+  });
+
+  it("tags target-down from a 하향 title", () => {
+    const out = recommend({
+      items: [mk({ brokerage: "삼성", title: "실적 부진, 목표가 하향" }), mk({ brokerage: "NH", title: "3분기 프리뷰" })],
+      watchlist: [], chatroomStocks: [],
+    });
+    expect(out.company[0].tags).toContain("target-down");
+  });
+
+  it("tags new-coverage from an Initiate title", () => {
+    const out = recommend({
+      items: [mk({ stock: "에코프로", brokerage: "삼성", title: "Initiate at Buy" })],
+      watchlist: [], chatroomStocks: [],
+    });
+    expect(out.company[0].tags).toContain("new-coverage");
   });
 
   it("tags chatroom and keeps the item visible even with one brokerage", () => {
