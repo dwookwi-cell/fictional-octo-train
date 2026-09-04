@@ -1,0 +1,9 @@
+{
+  "name": "증권 뉴스레터 도우미",
+  "short_name": "뉴스레터",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#0b62d6",
+  "icons": []
+}

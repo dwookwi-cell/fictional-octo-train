@@ -1,14 +1,20 @@
 import type { ReactNode } from "react";
+import "./globals.css";
+import BottomNav from "@/components/BottomNav";
 
-export const metadata = { title: "증권 뉴스레터 도우미" };
+export const metadata = {
+  title: "증권 뉴스레터 도우미",
+  manifest: "/manifest.webmanifest",
+};
+export const viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" as const };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-      </head>
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>{children}</body>
+      <body>
+        {children}
+        <BottomNav />
+      </body>
     </html>
   );
 }
