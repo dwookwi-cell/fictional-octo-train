@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { parseHankyungList } from "./hankyung";
 
 const html = readFileSync(join(__dirname, "fixtures", "hankyung.html"), "utf8");
+const businessHtml = readFileSync(join(__dirname, "fixtures", "hankyung-business.html"), "utf8");
 
 describe("parseHankyungList", () => {
   const items = parseHankyungList(html);
@@ -35,12 +36,16 @@ describe("parseHankyungList", () => {
     expect(kinds.has("market")).toBe(true);
   });
 
-  it("captures targetPrice when present as a number", () => {
-    const withTp = items.find((i) => i.targetPrice !== undefined);
-    if (withTp) {
-      expect(typeof withTp.targetPrice).toBe("number");
-      expect(withTp.targetPrice).toBeGreaterThan(0);
-    }
+  it("parses 적정가격/투자의견 from the 기업(business) view", () => {
+    const biz = parseHankyungList(businessHtml);
+    expect(biz.length).toBeGreaterThan(3);
+    expect(biz.every((i) => i.kind === "company")).toBe(true);
+    expect(biz.some((i) => typeof i.targetPrice === "number")).toBe(true);
+    // fixture row: 세경하이테크(148150) … | 6,500 | Buy | 메리츠증권
+    const row = biz.find((i) => i.stock === "세경하이테크");
+    expect(row?.targetPrice).toBe(6500);
+    expect(row?.opinion).toBe("Buy");
+    expect(row?.brokerage).toBe("메리츠");
   });
 
   it("builds absolute sourceUrl on consensus.hankyung.com", () => {

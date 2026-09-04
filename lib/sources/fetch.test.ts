@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import iconv from "iconv-lite";
-import { fetchNaverResearch } from "./naver";
+import { fetchNaverResearch, pageIsExhausted } from "./naver";
 import { fetchHankyungConsensus } from "./hankyung";
+import type { ResearchItem } from "@/lib/types";
 
 const fxUtf8 = (n: string) => readFileSync(join(__dirname, "fixtures", n), "utf8");
 // Live Naver serves EUC-KR; the committed fixture is UTF-8, so re-encode to
@@ -22,9 +23,12 @@ const notOk = () =>
   }) as unknown as Response;
 
 describe("fetchNaverResearch (fake fetchImpl)", () => {
+  const emptyTable = okArrayBuffer(iconv.encode("<table class='type_1'></table>", "euc-kr"));
+
   it("happy path: routes each list URL to its fixture and decodes EUC-KR correctly", async () => {
     const fake = (async (url: string | URL | Request) => {
       const u = String(url);
+      if (!/[?&]page=1(&|$)/.test(u)) return emptyTable; // page 2+ -> stop paging
       if (u.includes("company_list")) return okArrayBuffer(fxEucKr("naver-company.html"));
       if (u.includes("industry_list")) return okArrayBuffer(fxEucKr("naver-industry.html"));
       if (u.includes("market_info_list")) return okArrayBuffer(fxEucKr("naver-market.html"));
@@ -55,20 +59,48 @@ describe("fetchNaverResearch (fake fetchImpl)", () => {
   });
 });
 
-describe("fetchHankyungConsensus (fake fetchImpl)", () => {
-  it("happy path: parses the UTF-8 fixture text into a non-empty ResearchItem[]", async () => {
-    const fake = (async () => okText(fxUtf8("hankyung.html"))) as unknown as typeof fetch;
+describe("pageIsExhausted", () => {
+  const NOW = new Date("2026-09-04T02:00:00Z"); // 2026-09-04 11:00 KST
+  const row = (date: string): ResearchItem => ({
+    stock: "s", title: "t", brokerage: "b", date,
+    sourceSite: "naver", sourceUrl: "u", kind: "company",
+  });
+  it("is true for an empty page", () => expect(pageIsExhausted([], NOW)).toBe(true));
+  it("is false while the oldest row is still 오늘/어제", () =>
+    expect(pageIsExhausted([row("2026-09-04"), row("2026-09-03")], NOW)).toBe(false));
+  it("is true once the oldest row is older than 어제", () =>
+    expect(pageIsExhausted([row("2026-09-04"), row("2026-09-01")], NOW)).toBe(true));
+});
 
-    const items = await fetchHankyungConsensus(fake);
+describe("fetchHankyungConsensus (fake fetchImpl)", () => {
+  const routed = (async (url: string | URL | Request) => {
+    const u = String(url);
+    if (u.includes("skinType=business")) return okText(fxUtf8("hankyung-business.html"));
+    return okText(fxUtf8("hankyung.html"));
+  }) as unknown as typeof fetch;
+
+  it("happy path: fetches both views; merged items carry a targetPrice", async () => {
+    const items = await fetchHankyungConsensus(routed);
 
     expect(items.length).toBeGreaterThan(5);
     expect(items[0].title).toContain("세경하이테크");
     expect(items[0].brokerage).toBe("메리츠");
     expect(items[0].date).toBe("2026-09-04");
     expect(items[0].sourceSite).toBe("hankyung");
+    // the business view contributes rows that carry 적정가격
+    expect(items.some((i) => typeof i.targetPrice === "number")).toBe(true);
   });
 
-  it("returns [] when the response is not ok", async () => {
+  it("still returns the 전체 view when the 기업 view fails", async () => {
+    const fake = (async (url: string | URL | Request) => {
+      if (String(url).includes("skinType=business")) return notOk();
+      return okText(fxUtf8("hankyung.html"));
+    }) as unknown as typeof fetch;
+    const items = await fetchHankyungConsensus(fake);
+    expect(items.length).toBeGreaterThan(5);
+  });
+
+  it("returns [] when both views are not ok", async () => {
     const fake = (async () => notOk()) as unknown as typeof fetch;
     expect(await fetchHankyungConsensus(fake)).toEqual([]);
   });

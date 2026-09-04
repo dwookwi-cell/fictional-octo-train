@@ -6,8 +6,11 @@ import { normalizeStock, normalizeBrokerage } from "@/lib/normalize";
 const BASE = "https://consensus.hankyung.com";
 // "전체" list: the only Hankyung view that carries a 분류 column, so it is the
 // only one from which parseHankyungList(html) alone can classify all 3 kinds.
-// pagenum=80 = max page size. No sdate/edate -> server returns "today".
+// pagenum=80 = max page size. Server returns the last ~week (see fixture dates).
 const LIST_URL = `${BASE}/analysis/list?pagenum=80`;
+// 기업(business) list: the only view that carries 적정가격 + 투자의견 columns.
+// Fetched in addition to LIST_URL so the merged items get a targetPrice/opinion.
+const BUSINESS_URL = `${BASE}/analysis/list?skinType=business`;
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
@@ -73,7 +76,10 @@ export function parseHankyungList(html: string): ResearchItem[] {
     const kind = kindOf(category);
 
     const opinionRaw = iOpinion >= 0 ? cells[iOpinion] : "";
-    const opinion = opinionRaw && !/^N\/?A$/i.test(opinionRaw) ? opinionRaw : undefined;
+    const opinion =
+      opinionRaw && !/^N\/?A$/i.test(opinionRaw) && !/투자의견\s*없음|^없음$/.test(opinionRaw)
+        ? opinionRaw
+        : undefined;
 
     const targetPrice = iTarget >= 0 ? toNumber(cells[iTarget] ?? "") : undefined;
 
@@ -99,18 +105,28 @@ export function parseHankyungList(html: string): ResearchItem[] {
   return out;
 }
 
-/**
- * Fetch the Hankyung Consensus "전체" list and parse it.
- * Any fetch/parse failure is swallowed (returns []).
- */
-export async function fetchHankyungConsensus(
-  fetchImpl: typeof fetch = fetch,
-): Promise<ResearchItem[]> {
+async function fetchList(url: string, fetchImpl: typeof fetch): Promise<ResearchItem[]> {
   try {
-    const res = await fetchImpl(LIST_URL, { headers: { "User-Agent": UA } });
+    const res = await fetchImpl(url, { headers: { "User-Agent": UA } });
     if (!res.ok) return [];
     return parseHankyungList(await res.text());
   } catch {
     return [];
   }
+}
+
+/**
+ * Fetch the Hankyung Consensus "전체" list plus the "기업" list (which carries
+ * 적정가격/투자의견) and concatenate them. `dedupeItems` in collect() then merges
+ * the overlapping rows so the merged item gets a targetPrice/opinion.
+ * One view failing does not fail the other; both failing returns [].
+ */
+export async function fetchHankyungConsensus(
+  fetchImpl: typeof fetch = fetch,
+): Promise<ResearchItem[]> {
+  const [all, business] = await Promise.all([
+    fetchList(LIST_URL, fetchImpl),
+    fetchList(BUSINESS_URL, fetchImpl),
+  ]);
+  return [...all, ...business];
 }

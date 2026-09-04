@@ -1,7 +1,9 @@
 import * as cheerio from "cheerio";
 import type { ResearchItem, ResearchKind } from "@/lib/types";
-import { parseLooseKoreanDate } from "@/lib/dates";
+import { parseLooseKoreanDate, isRecentKST } from "@/lib/dates";
 import { normalizeStock, normalizeBrokerage } from "@/lib/normalize";
+
+const MAX_PAGES = 3; // "오늘 또는 어제" rarely needs more than 2 list pages
 
 const BASE = "https://finance.naver.com/research/";
 
@@ -75,23 +77,44 @@ export function parseNaverList(html: string, kind: ResearchKind): ResearchItem[]
 }
 
 /**
- * Fetch all three Naver Finance research list pages and parse them.
+ * True when a fetched list page contributes nothing newer than "어제" — i.e. its
+ * oldest row is already stale (or it has no rows). Used to stop paging early.
+ */
+export function pageIsExhausted(items: ResearchItem[], now: Date = new Date()): boolean {
+  if (items.length === 0) return true;
+  const oldest = items.reduce((a, b) => (a.date <= b.date ? a : b));
+  return !isRecentKST(oldest.date, now);
+}
+
+async function fetchNaverKind(
+  kind: ResearchKind,
+  fetchImpl: typeof fetch,
+): Promise<ResearchItem[]> {
+  const out: ResearchItem[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    try {
+      const res = await fetchImpl(`${BASE}${PAGES[kind]}?page=${page}`, {
+        headers: { "User-Agent": UA },
+      });
+      if (!res.ok) break;
+      const buf = await res.arrayBuffer();
+      const items = parseNaverList(new TextDecoder("euc-kr").decode(buf), kind);
+      out.push(...items);
+      if (pageIsExhausted(items)) break;
+    } catch {
+      break;
+    }
+  }
+  return out;
+}
+
+/**
+ * Fetch all three Naver Finance research lists (paging each until "오늘 또는 어제"
+ * is covered, capped at MAX_PAGES) and parse them.
  * A per-page fetch/parse failure is swallowed (that page contributes nothing).
  */
 export async function fetchNaverResearch(fetchImpl: typeof fetch = fetch): Promise<ResearchItem[]> {
   const kinds: ResearchKind[] = ["company", "industry", "market"];
-  const results = await Promise.all(
-    kinds.map(async (kind) => {
-      try {
-        const res = await fetchImpl(BASE + PAGES[kind], { headers: { "User-Agent": UA } });
-        if (!res.ok) return [];
-        const buf = await res.arrayBuffer();
-        const html = new TextDecoder("euc-kr").decode(buf);
-        return parseNaverList(html, kind);
-      } catch {
-        return [];
-      }
-    }),
-  );
+  const results = await Promise.all(kinds.map((kind) => fetchNaverKind(kind, fetchImpl)));
   return results.flat();
 }
