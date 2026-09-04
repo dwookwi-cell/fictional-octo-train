@@ -2,13 +2,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildNewsletter } from "@/lib/newsletter";
 import { recommend } from "@/lib/recommend";
-import { formatKoreanDate, kstNow } from "@/lib/dates";
+import { formatKoreanDate, todayYmdKST } from "@/lib/dates";
 import {
   loadCollection, loadSelection, loadMarketSelection, loadChatroom,
   getWatchlist, loadPrevTargetPrices, saveDraft, loadDraft,
 } from "@/lib/storage";
 
-const todayYmd = () => kstNow().toISOString().slice(0, 10);
+const todayYmd = todayYmdKST;
 
 export default function Page() {
   const [text, setText] = useState<string | null>(null);
@@ -36,13 +36,13 @@ export default function Page() {
       company,
       market,
       chatroomExtra: chatMatchedNotInRecs.map((s) => ({ stock: s, note: "단톡방 언급" })),
-      chatroomRaw: chatMatchedNotInRecs.length ? undefined : chat.raw || undefined,
+      chatroomRaw: chat.matched.length === 0 ? (chat.raw || undefined) : undefined,
     });
   }, []);
 
   useEffect(() => {
     const draft = loadDraft();
-    setText(draft ?? initial);
+    setText(draft && draft.length > 0 ? draft : initial);
   }, [initial]);
 
   const onChange = (v: string) => {
@@ -61,8 +61,11 @@ export default function Page() {
       try {
         await navigator.share({ text });
         setNote("공유창을 열었습니다. ‘나와의 채팅’을 선택하세요.");
-      } catch {
-        /* user cancelled */
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") {
+          await navigator.clipboard.writeText(text);
+          setNote("공유에 실패해 전체 복사했습니다. 카카오톡에 붙여넣으세요.");
+        }
       }
     } else {
       await navigator.clipboard.writeText(text);

@@ -97,6 +97,9 @@ export function saveDraft(text: string): void {
 export function loadDraft(): string | null {
   return read<string | null>("draft", null);
 }
+export function clearDraft(): void {
+  remove("draft");
+}
 
 export interface ChatroomState {
   matched: string[];
