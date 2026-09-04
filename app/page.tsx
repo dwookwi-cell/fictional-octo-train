@@ -4,15 +4,20 @@ import { useRouter } from "next/navigation";
 import RecItem from "@/components/RecItem";
 import { recommend } from "@/lib/recommend";
 import { parseChatroom } from "@/lib/kakaoParse";
-import { formatKoreanDate, kstNow } from "@/lib/dates";
+import { formatKoreanDate, todayYmdKST } from "@/lib/dates";
 import type { CollectionResult } from "@/lib/types";
 import {
   loadCollection, saveCollection, saveSnapshot, loadPrevTargetPrices,
-  getWatchlist, saveSelection, saveMarketSelection, saveChatroom,
+  getWatchlist, saveSelection, saveMarketSelection, saveChatroom, clearDraft,
 } from "@/lib/storage";
 
 const FRESH_MS = 30 * 60 * 1000;
-const todayYmd = () => kstNow().toISOString().slice(0, 10);
+const todayYmd = todayYmdKST;
+const SOURCE_LABEL: Record<string, string> = { naver: "네이버", hankyung: "한경" };
+const hhmm = (iso: string) => {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
 
 export default function Page() {
   const router = useRouter();
@@ -84,6 +89,8 @@ export default function Page() {
     saveSelection([...checked].filter((k) => !marketUrls.includes(k)));
     saveMarketSelection(marketUrls.filter((u) => checked.has(u)));
     saveChatroom(chat);
+    clearDraft(); // fresh selection must not be shadowed by an old edited draft
+
     router.push("/newsletter");
   };
 
@@ -100,16 +107,19 @@ export default function Page() {
           {loading ? "수집 중…" : "새로고침"}
         </button>
         <button onClick={() => setShowAll((v) => !v)}>{showAll ? "추천만 보기" : "전체 보기"}</button>
+        {collection && (
+          <span style={{ fontSize: 12, color: "#888" }}>마지막 수집: {hhmm(collection.collectedAt)}</span>
+        )}
         {collection?.failures.map((f) => (
-          <span key={f} style={{ fontSize: 12, color: "#c00" }}>{f} 수집 실패</span>
+          <span key={f} style={{ fontSize: 12, color: "#c00" }}>{SOURCE_LABEL[f] ?? f} 수집 실패</span>
         ))}
       </div>
 
-      {failed && (
+      {(failed || collection?.failures.length === 2) && (
         <p style={{ color: "#c00" }}>수집에 실패했습니다. 잠시 후 새로고침 해주세요.</p>
       )}
 
-      {recs && visibleCompany.length === 0 && (
+      {recs && visibleCompany.length === 0 && collection?.failures.length !== 2 && (
         <p style={{ color: "#666" }}>오늘은 2곳 이상 겹친 종목이 없습니다. “전체 보기”로 전체 리포트를 확인하세요.</p>
       )}
 
@@ -163,6 +173,9 @@ export default function Page() {
       <button onClick={includeChat}>분석에 포함</button>
       {chat.matched.length > 0 && (
         <p style={{ fontSize: 13, color: "#0b62d6" }}>반영된 종목: {chat.matched.join(", ")}</p>
+      )}
+      {chat.raw && chat.matched.length === 0 && (
+        <p style={{ fontSize: 13, color: "#666" }}>종목을 찾지 못했습니다. 원문은 뉴스레터에 첨부됩니다.</p>
       )}
 
       <div style={{ position: "sticky", bottom: 72, marginTop: 20 }}>

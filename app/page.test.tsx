@@ -52,6 +52,15 @@ describe("추천 screen", () => {
     expect(push).toHaveBeenCalledWith("/newsletter");
   });
 
+  it("clears a stale draft so the newsletter rebuilds from the new selection", async () => {
+    localStorage.setItem("snl:draft", JSON.stringify("어제 만든 초안"));
+    render(<Page />);
+    await screen.findByText("삼성전자");
+    await userEvent.click(screen.getAllByRole("checkbox")[0]);
+    await userEvent.click(screen.getByText("선택한 항목으로 뉴스레터 만들기"));
+    expect(localStorage.getItem("snl:draft")).toBeNull();
+  });
+
   it("keeps ticked 시황 URLs out of snl:selection", async () => {
     const withMarket: CollectionResult = {
       collectedAt: new Date().toISOString(),
@@ -89,5 +98,22 @@ describe("추천 screen", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("offline"); }) as unknown as typeof fetch);
     render(<Page />);
     expect(await screen.findByText(/수집에 실패했습니다/)).toBeInTheDocument();
+  });
+
+  it("shows a retry notice (not the no-overlap message) when both sources fail", async () => {
+    const bothFailed: CollectionResult = {
+      collectedAt: new Date().toISOString(), items: [], failures: ["naver", "hankyung"],
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => bothFailed })) as unknown as typeof fetch);
+    render(<Page />);
+    expect(await screen.findByText(/수집에 실패했습니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/겹친 종목이 없습니다/)).not.toBeInTheDocument();
+    expect(screen.getByText(/네이버 수집 실패/)).toBeInTheDocument();
+  });
+
+  it("shows the last-collected time", async () => {
+    render(<Page />);
+    await screen.findByText("삼성전자");
+    expect(screen.getByText(/마지막 수집: \d{2}:\d{2}/)).toBeInTheDocument();
   });
 });
