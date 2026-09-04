@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/newsletter" }));
 describe("BottomNav", () => {
   it("renders the three tabs", () => {
     render(<BottomNav />);
-    expect(screen.getByRole ? screen.getByText("추천") : screen.getByText("추천")).toBeInTheDocument();
+    expect(screen.getByText("추천")).toBeInTheDocument();
     expect(screen.getByText("뉴스레터")).toBeInTheDocument();
     expect(screen.getByText("관심종목")).toBeInTheDocument();
   });
