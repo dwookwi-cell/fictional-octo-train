@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isRecentKST, parseLooseKoreanDate, formatKoreanDate } from "./dates";
+import { isRecentKST, parseLooseKoreanDate, formatKoreanDate, todayYmdKST } from "./dates";
 
 const NOW = new Date("2026-09-03T00:30:00Z"); // 2026-09-03 09:30 KST
 
@@ -19,4 +19,11 @@ describe("parseLooseKoreanDate", () => {
 
 describe("formatKoreanDate", () => {
   it("formats KST date", () => expect(formatKoreanDate(NOW)).toBe("2026년 9월 3일"));
+});
+
+describe("todayYmdKST", () => {
+  it("is the KST calendar day, not the UTC one, before 09:00 KST", () =>
+    expect(todayYmdKST(new Date("2026-09-03T22:30:00Z"))).toBe("2026-09-04"));
+  it("matches within business hours", () =>
+    expect(todayYmdKST(new Date("2026-09-03T04:00:00Z"))).toBe("2026-09-03"));
 });

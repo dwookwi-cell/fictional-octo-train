@@ -8,6 +8,11 @@ function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Today's date in KST as "YYYY-MM-DD". Reads the shifted wall-clock, never .toISOString(). */
+export function todayYmdKST(now: Date = new Date()): string {
+  return ymd(kstNow(now));
+}
+
 export function isRecentKST(dateYmd: string, now: Date = new Date()): boolean {
   const today = kstNow(now);
   const todayYmd = ymd(today);
