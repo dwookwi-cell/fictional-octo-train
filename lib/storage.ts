@@ -97,3 +97,14 @@ export function saveDraft(text: string): void {
 export function loadDraft(): string | null {
   return read<string | null>("draft", null);
 }
+
+export interface ChatroomState {
+  matched: string[];
+  raw: string;
+}
+export function saveChatroom(v: ChatroomState): void {
+  write("chatroom", v);
+}
+export function loadChatroom(): ChatroomState {
+  return read<ChatroomState>("chatroom", { matched: [], raw: "" });
+}

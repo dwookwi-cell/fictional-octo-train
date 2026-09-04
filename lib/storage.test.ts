@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   getWatchlist, setWatchlist, saveSnapshot, loadPrevTargetPrices,
   saveSelection, loadSelection, saveDraft, loadDraft,
+  saveChatroom, loadChatroom,
 } from "./storage";
 import type { ResearchItem } from "./types";
 
@@ -38,4 +39,11 @@ describe("snapshots", () => {
 describe("selection & draft", () => {
   it("round-trips selection", () => { saveSelection(["삼성전자"]); expect(loadSelection()).toEqual(["삼성전자"]); });
   it("round-trips draft", () => { saveDraft("hello"); expect(loadDraft()).toBe("hello"); });
+});
+
+describe("chatroom", () => {
+  it("round-trips", () => {
+    saveChatroom({ matched: ["에코프로"], raw: "text" });
+    expect(loadChatroom()).toEqual({ matched: ["에코프로"], raw: "text" });
+  });
 });
