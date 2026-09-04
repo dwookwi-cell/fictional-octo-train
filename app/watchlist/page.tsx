@@ -85,6 +85,7 @@ export default function Page() {
           />
           <button
             onClick={() => {
+              if (!text.trim()) { setImportOpen(false); return; } // empty text must not wipe the list
               commit(text.split("\n"));
               setImportOpen(false);
             }}

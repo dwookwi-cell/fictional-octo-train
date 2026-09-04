@@ -25,6 +25,15 @@ describe("watchlist page", () => {
     expect(getWatchlist()).toEqual(["SK하이닉스"]);
   });
 
+  it("does not wipe the list when 불러오기 is saved with an empty textarea", async () => {
+    setWatchlist(["삼성전자", "SK하이닉스"]);
+    render(<Page />);
+    await screen.findByText("SK하이닉스");
+    await userEvent.click(screen.getByText("불러오기"));
+    await userEvent.click(screen.getByText("이 내용으로 저장"));
+    expect(getWatchlist()).toEqual(["삼성전자", "SK하이닉스"]);
+  });
+
   it("imports newline-separated text", async () => {
     render(<Page />);
     await userEvent.click(screen.getByText("불러오기"));
