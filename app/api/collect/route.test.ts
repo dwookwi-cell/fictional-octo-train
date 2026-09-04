@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { collect } from "./route";
+import { collect } from "@/lib/collect";
 import type { ResearchItem } from "@/lib/types";
 
 const NOW = new Date("2026-09-03T00:00:00Z"); // 09:00 KST
