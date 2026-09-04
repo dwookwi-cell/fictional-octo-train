@@ -5,8 +5,15 @@ export function brokerageLabel(brokerages: string[]): string {
   return brokerages.length > 3 ? `${head} 외, ${brokerages.length}곳` : `${head}, ${brokerages.length}곳`;
 }
 
+// Hankyung titles come as "종목명(123456) 실제 코멘트…"; drop that leading label.
+function stripStockPrefix(stock: string, comment: string): string {
+  const esc = stock.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return comment.replace(new RegExp(`^\\s*${esc}\\s*\\(\\d{4,6}\\)\\s*`), "");
+}
+
 function companyLine(r: RecItem): string {
-  let line = `• ${r.stock} — ${r.leadComment} (${brokerageLabel(r.brokerages)})`;
+  const lead = stripStockPrefix(r.stock, r.leadComment);
+  let line = `• ${r.stock} — ${lead} (${brokerageLabel(r.brokerages)})`;
   if (typeof r.targetPriceChangePct === "number" && r.targetPriceChangePct !== 0) {
     const sign = r.targetPriceChangePct > 0 ? "+" : "";
     line += ` / 목표가 ${sign}${r.targetPriceChangePct}%`;

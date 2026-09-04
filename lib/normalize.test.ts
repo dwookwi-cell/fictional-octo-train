@@ -21,14 +21,15 @@ describe("dedupeItems", () => {
     stock: "삼성전자", title: "3분기 실적 컨센 상회", brokerage: "삼성",
     date: "2026-09-03", sourceSite: "naver", sourceUrl: "u1", kind: "company",
   };
-  it("merges same stock+brokerage+similar title, keeps both urls", () => {
+  it("merges same stock+brokerage+similar title, keeps both urls separately", () => {
     const out = dedupeItems([
       base,
       { ...base, title: "3분기 실적 컨센 상회 (목표가 상향)", sourceSite: "hankyung", sourceUrl: "u2", targetPrice: 90000 },
     ]);
     expect(out).toHaveLength(1);
     expect(out[0].targetPrice).toBe(90000);
-    expect(out[0].sourceUrl).toContain("u1");
+    expect(out[0].sourceUrl).toBe("u1");
+    expect(out[0].extraUrls).toEqual(["u2"]);
   });
   it("keeps different brokerages separate", () => {
     const out = dedupeItems([base, { ...base, brokerage: "미래에셋", sourceUrl: "u3" }]);

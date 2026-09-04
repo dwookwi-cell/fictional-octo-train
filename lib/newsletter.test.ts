@@ -25,6 +25,15 @@ describe("buildNewsletter", () => {
     expect(out.trimEnd().endsWith("※ 자료: 네이버 금융 리서치, 한경 컨센서스")).toBe(true);
   });
 
+  it("strips a leading 종목명(코드) label from the lead comment", () => {
+    const out = buildNewsletter({
+      dateLabel: "d", market: [],
+      company: [rec({ stock: "세경하이테크", leadComment: "세경하이테크(148150) 실적 반등 시작", mentionCount: 2 })],
+    });
+    expect(out).toContain("• 세경하이테크 — 실적 반등 시작 (");
+    expect(out).not.toContain("(148150)");
+  });
+
   it("routes a target-up rec to the 목표가 변경 section with pct", () => {
     const out = buildNewsletter({
       dateLabel: "d", market: [],

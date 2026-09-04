@@ -31,6 +31,19 @@ describe("RecItem", () => {
   it("expands to show underlying reports on row click", async () => {
     render(<RecItem rec={rec} checked={false} onToggle={() => {}} />);
     await userEvent.click(screen.getByText("목표가 상향 · 삼성"));
-    expect(screen.getByRole("link")).toHaveAttribute("href", "u1");
+    expect(screen.getByRole("link", { name: "원문" })).toHaveAttribute("href", "u1");
+  });
+
+  it("renders one 원문 link per merged sourceUrl", async () => {
+    const multi: RecItemT = {
+      ...rec,
+      items: [{ ...rec.items[0], extraUrls: ["u2"] }],
+    };
+    render(<RecItem rec={multi} checked={false} onToggle={() => {}} />);
+    await userEvent.click(screen.getByText("목표가 상향 · 삼성"));
+    const links = screen.getAllByRole("link");
+    expect(links.map((a) => a.getAttribute("href"))).toEqual(["u1", "u2"]);
+    expect(screen.getByText("원문 1")).toBeInTheDocument();
+    expect(screen.getByText("원문 2")).toBeInTheDocument();
   });
 });

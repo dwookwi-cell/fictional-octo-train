@@ -43,13 +43,22 @@ export default function RecItem({
           </div>
           {open && (
             <ul style={{ margin: "8px 0 0", paddingLeft: 16 }}>
-              {rec.items.map((it, i) => (
-                <li key={i} style={{ fontSize: 13, color: "#555" }}>
-                  <a href={it.sourceUrl} target="_blank" rel="noreferrer">
-                    {it.title} · {it.brokerage}
-                  </a>
-                </li>
-              ))}
+              {rec.items.map((it, i) => {
+                const urls = [it.sourceUrl, ...(it.extraUrls ?? [])];
+                return (
+                  <li key={i} style={{ fontSize: 13, color: "#555" }}>
+                    <span>{it.title} · {it.brokerage}</span>
+                    {urls.map((u, j) => (
+                      <span key={j}>
+                        {" "}
+                        <a href={u} target="_blank" rel="noreferrer">
+                          {urls.length > 1 ? `원문 ${j + 1}` : "원문"}
+                        </a>
+                      </span>
+                    ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

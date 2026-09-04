@@ -35,12 +35,16 @@ export function dedupeItems(items: ResearchItem[]): ResearchItem[] {
     }
     if (mergedKey) {
       const g = groups.get(mergedKey)!;
+      const urls = [g.sourceUrl, ...(g.extraUrls ?? [])];
+      const extraUrls = it.sourceUrl && !urls.includes(it.sourceUrl)
+        ? [...(g.extraUrls ?? []), it.sourceUrl]
+        : g.extraUrls;
       groups.set(mergedKey, {
         ...g,
         title: g.title.length >= it.title.length ? g.title : it.title,
         targetPrice: g.targetPrice ?? it.targetPrice,
         opinion: g.opinion ?? it.opinion,
-        sourceUrl: g.sourceUrl.includes(it.sourceUrl) ? g.sourceUrl : `${g.sourceUrl} ${it.sourceUrl}`,
+        extraUrls,
       });
     } else {
       groups.set(`${it.stock}|${it.brokerage}|${k}|${groups.size}`, { ...it });
