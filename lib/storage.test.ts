@@ -4,6 +4,7 @@ import {
   getWatchlist, setWatchlist, saveSnapshot, loadPrevTargetPrices,
   saveSelection, loadSelection, saveDraft, loadDraft,
   saveChatroom, loadChatroom,
+  saveMemoPaste, loadMemoPaste, saveMemoDraft, loadMemoDraft,
 } from "./storage";
 import type { ResearchItem } from "./types";
 
@@ -45,5 +46,16 @@ describe("chatroom", () => {
   it("round-trips", () => {
     saveChatroom({ matched: ["에코프로"], raw: "text" });
     expect(loadChatroom()).toEqual({ matched: ["에코프로"], raw: "text" });
+  });
+});
+
+describe("끄적임", () => {
+  it("round-trips paste and draft, defaulting to empty", () => {
+    expect(loadMemoPaste()).toBe("");
+    expect(loadMemoDraft()).toBe("");
+    saveMemoPaste("#장 코스피");
+    saveMemoDraft("오늘의 끄적임");
+    expect(loadMemoPaste()).toBe("#장 코스피");
+    expect(loadMemoDraft()).toBe("오늘의 끄적임");
   });
 });
