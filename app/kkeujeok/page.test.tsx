@@ -75,4 +75,30 @@ describe("끄적임 screen", () => {
     expect(await screen.findByDisplayValue("수정하던 초안")).toBeInTheDocument();
     expect(screen.getByLabelText("나와의 채팅에서 복사한 내용")).toHaveValue("#장 코스피");
   });
+
+  it("saves the paste to storage as it is typed, before 정리하기 is pressed", async () => {
+    render(<Page />);
+    await userEvent.click(screen.getByLabelText("나와의 채팅에서 복사한 내용"));
+    await userEvent.paste("#장 코스피");
+    expect(localStorage.getItem("snl:memoPaste")).toContain("코스피");
+  });
+
+  it("disables 정리하기 while link info is loading and re-enables after", async () => {
+    let resolveFetch!: (v: { ok: boolean; json: () => Promise<unknown> }) => void;
+    fetchMock = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+    render(<Page />);
+    await userEvent.click(screen.getByLabelText("나와의 채팅에서 복사한 내용"));
+    await userEvent.paste(PASTE);
+    const button = screen.getByText("정리하기");
+    await userEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    resolveFetch({ ok: true, json: async () => ({}) });
+    await waitFor(() => expect(button).not.toBeDisabled());
+  });
 });

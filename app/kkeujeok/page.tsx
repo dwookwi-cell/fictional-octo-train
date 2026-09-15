@@ -85,12 +85,16 @@ export default function Page() {
       <textarea
         id="memo-paste"
         value={paste}
-        onChange={(e) => setPaste(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setPaste(v);
+          saveMemoPaste(v);
+        }}
         placeholder="#테마 로봇 기사 https://…"
         rows={6}
-        style={{ width: "100%", padding: 8 }}
+        style={{ width: "100%", padding: 8, fontSize: 16 }}
       />
-      <button onClick={() => void organize()} disabled={!paste.trim()}>
+      <button onClick={() => void organize()} disabled={!paste.trim() || loadingInfo}>
         정리하기
       </button>
 
@@ -147,7 +151,7 @@ export default function Page() {
             value={draft}
             onChange={(e) => editDraft(e.target.value)}
             rows={16}
-            style={{ width: "100%", padding: 10, marginTop: 16, fontSize: 14, lineHeight: 1.5 }}
+            style={{ width: "100%", padding: 10, marginTop: 16, fontSize: 16, lineHeight: 1.5 }}
           />
           <ShareButtons text={draft} />
         </>
