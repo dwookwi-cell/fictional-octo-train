@@ -2,7 +2,9 @@
   "name": "myfirstproject",
   "version": "1.0.0",
   "description": "",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -13,7 +15,8 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "watch:daangn": "tsx scripts/watch-daangn.ts"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +38,7 @@
     "cheerio": "^1.2.0",
     "iconv-lite": "^0.6.3",
     "jsdom": "^30.0.1",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vitest": "^4.1.11"
   }
