@@ -14,7 +14,7 @@ export default function ShareButtons({ text }: { text: string }) {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text });
-        setNote("공유창을 열었습니다. '나와의 채팅'을 선택하세요.");
+        setNote("공유창을 열었습니다. ‘나와의 채팅’을 선택하세요.");
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           await navigator.clipboard.writeText(text);
