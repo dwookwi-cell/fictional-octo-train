@@ -62,4 +62,22 @@ describe("parseMemos", () => {
       { tag: "종목", memo: "삼성전자" },
     ]);
   });
+
+  it("keeps a Hangul URL fragment inside the URL instead of reading it as a tag", () => {
+    expect(parseMemos("#테마 https://a.example.com/page#장 메모")).toEqual([
+      { tag: "테마", memo: "메모", url: "https://a.example.com/page#장" },
+    ]);
+  });
+
+  it("trims trailing ) . , punctuation off the URL but keeps it in the memo", () => {
+    const [item] = parseMemos("#장 (https://a.example.com/x) 참고");
+    expect(item.url).toBe("https://a.example.com/x");
+    expect(item.memo).toContain("참고");
+  });
+
+  it("stops the URL at Hangul glued directly onto it with no separator", () => {
+    expect(parseMemos("#종목 https://a.example.com/x에서 봤음")).toEqual([
+      { tag: "종목", memo: "에서 봤음", url: "https://a.example.com/x" },
+    ]);
+  });
 });
