@@ -50,8 +50,6 @@ export default function Page() {
     saveDraft(v);
   };
 
-
-
   return (
     <main>
       <h1 style={{ fontSize: 18 }}>뉴스레터 초안</h1>
