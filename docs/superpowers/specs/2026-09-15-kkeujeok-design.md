@@ -35,7 +35,7 @@
    - 기사 정보를 가져오는 동안 "기사 정보 가져오는 중" 표시. 실패해도 항목은 그대로 남는다.
    - `#노트` 메시지는 목록·초안 모두에서 제외
 3. **[초안 만들기]** → 편집 가능한 초안 텍스트 칸
-4. **[전체 복사] [카톡으로 보내기]** — 뉴스레터 탭과 같은 동작. 두 화면이 공유하도록 기존 코드를 `lib/share.ts`로 옮긴다.
+4. **[전체 복사] [카톡으로 보내기]** — 뉴스레터 탭과 같은 동작. 두 화면이 공유하도록 기존 코드를 `components/ShareButtons.tsx` 컴포넌트로 옮긴다.
 
 붙여넣은 원문과 초안은 `localStorage`(기존 `lib/storage.ts`의 `snl:` 접두어 방식)에 저장해 탭을 오가도 유지한다.
 
@@ -76,7 +76,7 @@ interface MemoItem {
 ### API — `app/api/linkinfo/route.ts`
 - `POST { urls: string[] }` → `{ [url]: { title?: string; description?: string } }`
 - 한 번에 최대 30개. 초과분은 무시.
-- `http`/`https` 이외의 URL은 무시(서버가 임의 주소를 열지 않도록).
+- `http`/`https` 이외의 URL, `localhost`, IP 주소로 된 링크는 무시(서버가 내부 주소를 열지 않도록).
 
 ### 가져오기 — `lib/linkInfo.ts`
 - 서버에서 `fetch` (User-Agent 지정), **링크당 8초 타임아웃**, 모두 동시에.
@@ -137,8 +137,8 @@ interface MemoItem {
 | `lib/memoParse.ts` | 신규 — 붙여넣기 파싱 |
 | `lib/linkInfo.ts` | 신규 — 링크 열기·메타 추출 |
 | `lib/kkeujeok.ts` | 신규 — 초안 텍스트 조립 |
-| `lib/share.ts` | 신규 — 복사/카톡 보내기 (뉴스레터 화면에서 옮김) |
-| `app/newsletter/page.tsx` | `lib/share.ts` 사용하도록 수정 |
+| `components/ShareButtons.tsx` | 신규 — 복사/카톡 보내기 버튼 (뉴스레터 화면에서 옮김) |
+| `app/newsletter/page.tsx` | `ShareButtons` 사용하도록 수정 |
 | `components/BottomNav.tsx` | 탭 추가 |
 | `lib/storage.ts` | 끄적임 원문·초안 저장 함수 추가 |
 | `README.md` | 끄적임 사용법 한 단락 |
@@ -153,6 +153,7 @@ vitest, 실제 인터넷 접속 없이 (기존 `lib/sources/fetch.test.ts`처럼
 
 - `lib/memoParse.test.ts` — 모바일/PC 접두어, 날짜 구분선, 여러 줄 메시지, 접두어 없는 입력, 태그/태그 없음/`#쇼츠` 보존, URL 여러 개, 중복 링크, 빈 메시지
 - `lib/linkInfo.test.ts` — og 추출, `<title>` 대체, 엔티티 해제, EUC-KR 해석, 건너뛰는 사이트는 fetch 호출 안 함, 실패·타임아웃 시 정보 없음
+- `app/api/linkinfo/route.test.ts` — 잘못된 요청은 400, 건너뛰는 사이트만 있으면 빈 결과
 - `lib/kkeujeok.test.ts` — 태그 순서 번호, 사실 줄 조립 4가지 경우, URL 없는 항목
 - `app/kkeujeok/page.test.tsx` — 붙여넣기 → 태그별 목록 → 체크 해제 → 초안에 반영
 - `components/BottomNav.test.tsx` — 탭 4개
