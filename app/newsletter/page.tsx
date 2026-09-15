@@ -7,12 +7,12 @@ import {
   loadCollection, loadSelection, loadMarketSelection, loadChatroom,
   getWatchlist, loadPrevTargetPrices, saveDraft, loadDraft,
 } from "@/lib/storage";
+import ShareButtons from "@/components/ShareButtons";
 
 const todayYmd = todayYmdKST;
 
 export default function Page() {
   const [text, setText] = useState<string | null>(null);
-  const [note, setNote] = useState("");
 
   const initial = useMemo(() => {
     const collection = loadCollection();
@@ -50,28 +50,7 @@ export default function Page() {
     saveDraft(v);
   };
 
-  const copy = async () => {
-    if (text) await navigator.clipboard.writeText(text);
-    setNote("복사했습니다.");
-  };
 
-  const sendKakao = async () => {
-    if (!text) return;
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ text });
-        setNote("공유창을 열었습니다. ‘나와의 채팅’을 선택하세요.");
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") {
-          await navigator.clipboard.writeText(text);
-          setNote("공유에 실패해 전체 복사했습니다. 카카오톡에 붙여넣으세요.");
-        }
-      }
-    } else {
-      await navigator.clipboard.writeText(text);
-      setNote("이 브라우저는 공유를 지원하지 않아 복사했습니다. 카카오톡에 붙여넣으세요.");
-    }
-  };
 
   return (
     <main>
@@ -82,16 +61,7 @@ export default function Page() {
         rows={20}
         style={{ width: "100%", padding: 10, fontSize: 14, lineHeight: 1.5 }}
       />
-      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-        <button onClick={copy}>전체 복사</button>
-        <button
-          onClick={sendKakao}
-          style={{ background: "#fee500", border: 0, borderRadius: 6, padding: "8px 14px" }}
-        >
-          카톡으로 보내기
-        </button>
-      </div>
-      {note && <p style={{ fontSize: 13, color: "#0b62d6" }}>{note}</p>}
+      <ShareButtons text={text ?? ""} />
     </main>
   );
 }
