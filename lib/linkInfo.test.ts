@@ -14,6 +14,13 @@ const res = (body: string | Uint8Array, contentType = "text/html; charset=utf-8"
   } as unknown as Response;
 };
 const eucKr = (s: string) => Uint8Array.from(iconv.encode(s, "euc-kr")).buffer;
+const redirectRes = (status: number, location?: string) =>
+  ({
+    ok: false,
+    status,
+    headers: new Headers(location ? { location } : {}),
+    arrayBuffer: async () => new ArrayBuffer(0),
+  }) as unknown as Response;
 
 describe("shouldSkip", () => {
   it("skips data/SNS hosts, non-http, localhost and IP links", () => {
@@ -30,6 +37,10 @@ describe("shouldSkip", () => {
   it("opens ordinary news links", () => {
     expect(shouldSkip("https://n.news.naver.com/mnews/article/374/0000502976")).toBe(false);
     expect(shouldSkip("https://www.insight.co.kr/news/549347")).toBe(false);
+  });
+  it("strips a trailing dot from the hostname before checking", () => {
+    expect(shouldSkip("http://localhost./")).toBe(true);
+    expect(shouldSkip("https://finance.naver.com./x")).toBe(true);
   });
 });
 
@@ -84,5 +95,50 @@ describe("fetchLinkInfo", () => {
     const urls = Array.from({ length: 35 }, (_, i) => `https://news.example.com/${i}`);
     await fetchLinkInfo(urls, fake as unknown as typeof fetch);
     expect(fake).toHaveBeenCalledTimes(30);
+  });
+
+  it("stops following a redirect that leads into an internal address", async () => {
+    const fake = vi.fn(async () => redirectRes(302, "http://127.0.0.1/admin"));
+    const out = await fetchLinkInfo(["https://a.example.com/x"], fake as unknown as typeof fetch);
+    expect(out).toEqual({});
+    expect(fake).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows a redirect and keys the result by the original url", async () => {
+    const original = "https://a.example.com/x";
+    const final = "https://news.example.com/final";
+    const fake = vi.fn(async (url: string | URL | Request) => {
+      const u = String(url);
+      if (u === original) return redirectRes(301, final);
+      if (u === final) return res(html('<meta property="og:title" content="속보">'));
+      throw new Error("unexpected url " + u);
+    });
+    const out = await fetchLinkInfo([original], fake as unknown as typeof fetch);
+    expect(out).toEqual({ [original]: { title: "속보" } });
+    expect(fake).toHaveBeenCalledTimes(2);
+    expect(String(fake.mock.calls[1][0])).toBe(final);
+  });
+
+  it("gives up after more than 3 redirect hops", async () => {
+    const fake = vi.fn(async (url: string | URL | Request) => {
+      const n = Number(String(url).split("/").pop());
+      return redirectRes(302, `https://news.example.com/${n + 1}`);
+    });
+    const out = await fetchLinkInfo(["https://news.example.com/0"], fake as unknown as typeof fetch);
+    expect(out).toEqual({});
+  });
+
+  it("passes redirect: manual on every hop", async () => {
+    const original = "https://a.example.com/x";
+    const final = "https://news.example.com/final";
+    const fake = vi.fn(async (url: string | URL | Request, _init?: RequestInit) => {
+      const u = String(url);
+      if (u === original) return redirectRes(301, final);
+      return res(html("<title>t</title>"));
+    });
+    await fetchLinkInfo([original], fake as unknown as typeof fetch);
+    for (const call of fake.mock.calls) {
+      expect((call[1] as RequestInit | undefined)?.redirect).toBe("manual");
+    }
   });
 });

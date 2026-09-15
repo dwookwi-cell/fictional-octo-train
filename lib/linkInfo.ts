@@ -22,7 +22,7 @@ export function shouldSkip(url: string): boolean {
     return true;
   }
   if (u.protocol !== "http:" && u.protocol !== "https:") return true;
-  const host = u.hostname;
+  const host = u.hostname.replace(/\.$/, "");
   // never let the server open internal addresses; news links are never bare IPs
   if (host === "localhost" || host.endsWith(".localhost") || host.startsWith("[") || /^\d+(\.\d+){3}$/.test(host)) {
     return true;
@@ -46,6 +46,9 @@ export function parseMeta(html: string): LinkInfo {
   return { ...(title ? { title } : {}), ...(description ? { description } : {}) };
 }
 
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECT_HOPS = 3;
+
 export async function fetchLinkInfo(
   urls: string[],
   fetchImpl: typeof fetch = fetch,
@@ -55,10 +58,26 @@ export async function fetchLinkInfo(
   await Promise.all(
     targets.map(async (url) => {
       try {
-        const res = await fetchImpl(url, {
-          headers: { "User-Agent": UA },
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        });
+        // one shared timeout budget across all redirect hops for this link
+        const signal = AbortSignal.timeout(TIMEOUT_MS);
+        let current = url;
+        let res: Response;
+        let hops = 0;
+        for (;;) {
+          res = await fetchImpl(current, {
+            headers: { "User-Agent": UA },
+            signal,
+            redirect: "manual",
+          });
+          if (!REDIRECT_STATUSES.has(res.status)) break;
+          hops++;
+          if (hops > MAX_REDIRECT_HOPS) return;
+          const location = res.headers.get("location");
+          if (!location) return;
+          const next = new URL(location, current).href;
+          if (shouldSkip(next)) return;
+          current = next;
+        }
         if (!res.ok) return;
         const info = parseMeta(decodeHtml(await res.arrayBuffer(), res.headers.get("content-type")));
         if (info.title || info.description) out[url] = info;
