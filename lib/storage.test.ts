@@ -49,13 +49,13 @@ describe("chatroom", () => {
   });
 });
 
-describe("끄적임", () => {
+describe("dwwi", () => {
   it("round-trips paste and draft, defaulting to empty", () => {
     expect(loadMemoPaste()).toBe("");
     expect(loadMemoDraft()).toBe("");
     saveMemoPaste("#장 코스피");
-    saveMemoDraft("오늘의 끄적임");
+    saveMemoDraft("오늘의 dwwi");
     expect(loadMemoPaste()).toBe("#장 코스피");
-    expect(loadMemoDraft()).toBe("오늘의 끄적임");
+    expect(loadMemoDraft()).toBe("오늘의 dwwi");
   });
 });

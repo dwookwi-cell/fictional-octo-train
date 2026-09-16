@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import ShareButtons from "@/components/ShareButtons";
 import { MEMO_TAGS, parseMemos, type MemoItem, type MemoTag } from "@/lib/memoParse";
-import { buildKkeujeok } from "@/lib/kkeujeok";
+import { buildDwwi } from "@/lib/dwwi";
 import type { LinkInfo } from "@/lib/linkInfo";
 import { formatKoreanDate } from "@/lib/dates";
 import { loadMemoDraft, loadMemoPaste, saveMemoDraft, saveMemoPaste } from "@/lib/storage";
@@ -64,7 +64,7 @@ export default function Page() {
 
   const makeDraft = () => {
     const chosen = (items ?? []).filter((_, i) => !excluded.has(i));
-    const text = buildKkeujeok(formatKoreanDate(), chosen, infos);
+    const text = buildDwwi(formatKoreanDate(), chosen, infos);
     setDraft(text);
     saveMemoDraft(text);
   };
@@ -78,7 +78,7 @@ export default function Page() {
 
   return (
     <main>
-      <h1 style={{ fontSize: 18 }}>끄적임</h1>
+      <h1 style={{ fontSize: 18 }}>dwwi</h1>
       <label htmlFor="memo-paste" style={{ display: "block", fontSize: 13, color: "#555", margin: "8px 0 4px" }}>
         나와의 채팅에서 복사한 내용
       </label>

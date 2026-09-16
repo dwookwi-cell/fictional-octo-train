@@ -14,7 +14,7 @@ export function factLine(item: MemoItem, info?: LinkInfo): string {
 // untagged items go last; Array.prototype.sort is stable, so paste order holds within a tag
 const rank = (t: MemoItem["tag"]) => (t === null ? MEMO_TAGS.length : MEMO_TAGS.indexOf(t));
 
-export function buildKkeujeok(dateLabel: string, items: MemoItem[], infos: Record<string, LinkInfo>): string {
+export function buildDwwi(dateLabel: string, items: MemoItem[], infos: Record<string, LinkInfo>): string {
   const blocks = items
     .filter((it) => it.tag !== "노트")
     .sort((a, b) => rank(a.tag) - rank(b.tag))
@@ -26,5 +26,5 @@ export function buildKkeujeok(dateLabel: string, items: MemoItem[], infos: Recor
         "내 생각: ",
       ].join("\n"),
     );
-  return [`오늘의 끄적임 · ${dateLabel}`, ...blocks].join("\n\n");
+  return [`오늘의 dwwi · ${dateLabel}`, ...blocks].join("\n\n");
 }

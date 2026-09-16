@@ -10,7 +10,7 @@ describe("BottomNav", () => {
     render(<BottomNav />);
     expect(screen.getByText("추천")).toBeInTheDocument();
     expect(screen.getByText("뉴스레터")).toBeInTheDocument();
-    expect(screen.getByText("끄적임")).toBeInTheDocument();
+    expect(screen.getByText("dwwi")).toBeInTheDocument();
     expect(screen.getByText("관심종목")).toBeInTheDocument();
   });
   it("marks the active tab with aria-current", () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildKkeujeok, factLine } from "./kkeujeok";
+import { buildDwwi, factLine } from "./dwwi";
 
 describe("factLine", () => {
   it("uses the memo alone when there is no article info", () =>
@@ -22,9 +22,9 @@ describe("factLine", () => {
   it("is empty when there is nothing", () => expect(factLine({ tag: null, memo: "", url: "u" })).toBe(""));
 });
 
-describe("buildKkeujeok", () => {
+describe("buildDwwi", () => {
   it("numbers items in tag order, keeps paste order within a tag, drops #노트", () => {
-    const out = buildKkeujeok(
+    const out = buildDwwi(
       "2026년 9월 15일",
       [
         { tag: null, memo: "태그없음" },
@@ -38,7 +38,7 @@ describe("buildKkeujeok", () => {
     );
     expect(out).toBe(
       [
-        "오늘의 끄적임 · 2026년 9월 15일",
+        "오늘의 dwwi · 2026년 9월 15일",
         "1.\n사실: 한마디\n해석: \n내 생각: ",
         "2.\n사실: 장1\n해석: \n내 생각: ",
         "3. https://t1.example.com\n사실: 테마1 (기사: 기사제목)\n해석: \n내 생각: ",

@@ -29,7 +29,7 @@ async function pasteAndOrganize(text = PASTE) {
   await userEvent.click(screen.getByText("정리하기"));
 }
 
-describe("끄적임 screen", () => {
+describe("dwwi screen", () => {
   it("groups messages by tag in newsletter order, hides #노트, shows fetched titles", async () => {
     render(<Page />);
     await pasteAndOrganize();
@@ -46,11 +46,11 @@ describe("끄적임 screen", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: /오늘은 쉬어가기/ }));
     await userEvent.click(screen.getByText("초안 만들기"));
     const draft = screen.getByRole("textbox", { name: "초안" }) as HTMLTextAreaElement;
-    expect(draft.value).toContain("오늘의 끄적임 · ");
+    expect(draft.value).toContain("오늘의 dwwi · ");
     expect(draft.value).not.toContain("쉬어가기");
     expect(draft.value).toContain("1. https://markets.hankyung.com/marketmap/kospi\n사실: 코스피 +6.8% 개인 7조 매도\n해석: ");
     expect(draft.value).toContain(`2. ${INSIGHT}\n사실: ‘중국산 로봇’ 철퇴 준비중인 미국\n해석: `);
-    expect(localStorage.getItem("snl:memoDraft")).toContain("오늘의 끄적임");
+    expect(localStorage.getItem("snl:memoDraft")).toContain("오늘의 dwwi");
   });
 
   it("still lists items when link info cannot be fetched", async () => {
