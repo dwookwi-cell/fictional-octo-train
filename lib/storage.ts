@@ -111,3 +111,16 @@ export function saveChatroom(v: ChatroomState): void {
 export function loadChatroom(): ChatroomState {
   return read<ChatroomState>("chatroom", { matched: [], raw: "" });
 }
+
+export function saveMemoPaste(text: string): void {
+  write("memoPaste", text);
+}
+export function loadMemoPaste(): string {
+  return read<string>("memoPaste", "");
+}
+export function saveMemoDraft(text: string): void {
+  write("memoDraft", text);
+}
+export function loadMemoDraft(): string {
+  return read<string>("memoDraft", "");
+}
